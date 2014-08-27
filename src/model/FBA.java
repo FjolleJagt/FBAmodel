@@ -1,8 +1,5 @@
 package model;
 
-import java.lang.Math;
-import java.util.*;
-import java.io.*;
 import org.gnu.glpk.GLPK;
 import org.gnu.glpk.GLPKConstants;
 import org.gnu.glpk.GlpkException;
@@ -12,7 +9,7 @@ import org.gnu.glpk.glp_prob;
 import org.gnu.glpk.glp_smcp;
 import org.gnu.glpk.glp_iocp;
 
-public class fba {
+public class FBA {
 
     int m; // #compounds
     int n; // #reactions
@@ -29,7 +26,7 @@ public class fba {
     String [] reactionSpec;
     int cValue; //biomass indicator
 
-    public fba(int n, int m) {
+    public FBA(int n, int m) {
         this.n = n;  //number of reactions
         this.m = m;  //number of compounds
 

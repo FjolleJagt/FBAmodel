@@ -540,7 +540,7 @@ public class FBAreader {
 	}
 	*/
 
-        fba F = new fba(R.noReactions,R.noCompounds);
+        FBA F = new FBA(R.noReactions,R.noCompounds);
 
         F.loadS(R.S);
 

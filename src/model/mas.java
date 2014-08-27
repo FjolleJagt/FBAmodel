@@ -148,7 +148,7 @@ public class mas implements ActionListener {
 		
 		R.createBiomassReaction(inBiomass);
 		
-		fba F = new fba(R.noReactions,R.noCompounds);
+		FBA F = new FBA(R.noReactions,R.noCompounds);
 		
 		F.loadS(R.S);			
 		F.loadVectors(R.a,R.b,R.c,R.lb,R.ub);			
@@ -187,7 +187,7 @@ public class mas implements ActionListener {
             		}
        		 }		
        	
-        	fba F2 = new fba(R.noReactions,R.noCompounds);
+        	FBA F2 = new FBA(R.noReactions,R.noCompounds);
        
         	F2.loadS(R.S);           
         	F2.loadVectors(R.a,R.b,R.c,R.lb,R.ub);   
