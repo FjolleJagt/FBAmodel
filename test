@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+/usr/lib/jvm/java-7-openjdk/bin/java -Djava.library.path=/usr/local/lib/jni -Dfile.encoding=UTF-8 -classpath /home/joshua/scripts/java/mas/Model/bin:/home/joshua/scripts/java/mas/Model/lib/glpk-java.jar:/home/joshua/scripts/java/mas/Model/lib/jxl.jar model.mas
+
+diff resources/{out,ref}.xls
+
+if [ $? == 0 ]; then
+	echo -e "\nPass!"
+else
+	echo -e "\nFailure!"
+fi
