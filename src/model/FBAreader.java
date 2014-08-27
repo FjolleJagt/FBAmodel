@@ -4,9 +4,6 @@ import java.io.*;
 import java.io.File;
 import jxl.*;
 import jxl.write.*;
-import java.lang.Math;
-import java.util.*;
-import java.awt.Color;
 
 public class FBAreader {
     String inputFileName;
