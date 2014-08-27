@@ -11,41 +11,41 @@ import org.gnu.glpk.glp_iocp;
 
 public class FBA {
 
-    int m; // #compounds
-    int n; // #reactions
+    int noCompounds; // #compounds
+    int noReactants; // #reactions
 
     double [][] S; // Stoichiometry matrix
     double [] v; //Flux vector
-    double [] a; // lower bounds
-    double [] b; // upper bounds
-    double [] c; // biomass vector;
-    boolean [] lowerBound;
-    boolean [] upperBound;
+    double [] lowerBounds; // lower bounds
+    double [] upperBounds; // upper bounds
+    double [] biomassVector; // biomass vector;
+    boolean [] isLowerBoundActive;
+    boolean [] isUpperBoundActive;
     String [] reactionNames;
     String [] reactantNames;
     String [] reactionSpec;
-    int cValue; //biomass indicator
+    int biomassValue; //biomass indicator
 
-    public FBA(int n, int m) {
-        this.n = n;  //number of reactions
-        this.m = m;  //number of compounds
+    public FBA(int noReactants, int noCompounds) {
+        this.noReactants = noReactants;
+        this.noCompounds = noCompounds;
 
-        S = new double [m][n];
-        v = new double [n];
-        a = new double [n];
-        lowerBound = new boolean [n];
-        b = new double [n];
-        upperBound = new boolean [n];
-        c = new double [n];
+        S = new double [noCompounds][noReactants];
+        v = new double [noReactants];
+        lowerBounds = new double [noReactants];
+        isLowerBoundActive = new boolean [noReactants];
+        upperBounds = new double [noReactants];
+        isUpperBoundActive = new boolean [noReactants];
+        biomassVector = new double [noReactants];
 
-        reactionNames = new String [n];
-        reactantNames = new String [m];
+        reactionNames = new String [noReactants];
+        reactantNames = new String [noCompounds];
 
     }
 
     public void loadS(double [][] S) {
-        for(int i = 0;i < m;i++) {
-            for(int j = 0;j < n;j++) {
+        for(int i = 0;i < noCompounds;i++) {
+            for(int j = 0;j < noReactants;j++) {
                 this.S[i][j] = S[i][j];
             }
         }
@@ -53,32 +53,32 @@ public class FBA {
     }
 
     public void loadVectors(double [] a, double [] b, double [] c, boolean [] lowerBound, boolean [] upperBound) {
-        for(int j = 0;j < n;j++) {
-            this.a[j] = a[j];
-            this.b[j] = b[j];
-            this.c[j] = c[j];
-            this.lowerBound[j] = lowerBound[j];
-            this.upperBound[j] = upperBound[j];
+        for(int j = 0;j < noReactants;j++) {
+            this.lowerBounds[j] = a[j];
+            this.upperBounds[j] = b[j];
+            this.biomassVector[j] = c[j];
+            this.isLowerBoundActive[j] = lowerBound[j];
+            this.isUpperBoundActive[j] = upperBound[j];
             if(c[j] > 0) {
-                cValue = j;
+                biomassValue = j;
             }
         }
     }
 
     public void loadNames(String [] cn, String [] rn) {
-        for(int j = 0;j < n;j++) {
+        for(int j = 0;j < noReactants;j++) {
             reactionNames[j] = rn[j];
         }
-        for(int i = 0;i < m;i++) {
+        for(int i = 0;i < noCompounds;i++) {
             reactantNames[i] = cn[i];
         }
     }
 
     public void dump() {
-        for(int j = 0;j < n;j++) {
+        for(int j = 0;j < noReactants;j++) {
             System.out.print(reactionNames[j] + " : ");
             boolean firstone = true;
-            for(int i = 0;i < m;i++) {
+            for(int i = 0;i < noCompounds;i++) {
 
                 if(S[i][j]<0) {
                     if(!firstone) {
@@ -96,14 +96,14 @@ public class FBA {
                 }
             }
 
-            if(a[j] == 0) {
+            if(lowerBounds[j] == 0) {
                 System.out.print("--> ");
             }
             else {
                 System.out.print("<==> ");
             }
             firstone = true;
-            for(int i = 0;i < m;i++) {
+            for(int i = 0;i < noCompounds;i++) {
                 if(S[i][j]>0) {
                     if(!firstone) {
                         System.out.print("+ ");
@@ -131,7 +131,7 @@ public class FBA {
         SWIGTYPE_p_int ind;
         SWIGTYPE_p_double val;
         int ret;
-        double [] retArray = new double [n];
+        double [] retArray = new double [noReactants];
 
         // describe the optimization problem
         try {
@@ -140,35 +140,35 @@ public class FBA {
             System.out.println("Problem created");
             GLPK.glp_set_prob_name(lp, "myProblem");
 
-            GLPK.glp_add_rows(lp, m);
+            GLPK.glp_add_rows(lp, noCompounds);
 
             // Define columns
-            GLPK.glp_add_cols(lp, n);//noOfReactions
+            GLPK.glp_add_cols(lp, noReactants);//noOfReactions
 
-            for(int k = 0;k < n;k++) {
+            for(int k = 0;k < noReactants;k++) {
 
                 GLPK.glp_set_col_name(lp, k+1, reactionNames[k]);
                 GLPK.glp_set_col_kind(lp, k+1, GLPKConstants.GLP_CV);
 
-                if(lowerBound[k]) {
-                    if(upperBound[k]) {
-                        if(a[k] < b[k]) {
-                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_DB, a[k], b[k]);
+                if(isLowerBoundActive[k]) {
+                    if(isUpperBoundActive[k]) {
+                        if(lowerBounds[k] < upperBounds[k]) {
+                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_DB, lowerBounds[k], upperBounds[k]);
                         }
                         else {
-                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FX, a[k], b[k]);
+                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FX, lowerBounds[k], upperBounds[k]);
                         }
                     }
                     else {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_LO, a[k], b[k]);
+                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_LO, lowerBounds[k], upperBounds[k]);
                     }
                 }
                 else {
-                    if(upperBound[k]) {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_UP, a[k], b[k]);
+                    if(isUpperBoundActive[k]) {
+                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_UP, lowerBounds[k], upperBounds[k]);
                     }
                     else {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FR, a[k], b[k]);
+                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FR, lowerBounds[k], upperBounds[k]);
                     }
                 }
             }
@@ -177,8 +177,8 @@ public class FBA {
             // Create constraints
             //first we count the number of entries;
             int ne = 0;
-            for(int i = 0;i < m;i++) {
-                for(int j = 0;j < n;j++) {
+            for(int i = 0;i < noCompounds;i++) {
+                for(int j = 0;j < noReactants;j++) {
                     if(S[i][j]!=0) {
                         ne++;
                     }
@@ -196,8 +196,8 @@ public class FBA {
 
             //then we populate
             int counter = 1;
-            for(int i = 0;i < m;i++) {
-                for(int j = 0;j < n;j++) {
+            for(int i = 0;i < noCompounds;i++) {
+                for(int j = 0;j < noReactants;j++) {
                     if(S[i][j]!=0) {
                         GLPK.intArray_setitem(rowI, counter, i+1);
                         GLPK.intArray_setitem(colI, counter, j+1);
@@ -224,7 +224,7 @@ public class FBA {
             // Define objective
             GLPK.glp_set_obj_name(lp, "z");
             GLPK.glp_set_obj_dir(lp, GLPKConstants.GLP_MAX);
-            GLPK.glp_set_obj_coef(lp, cValue+1, 1.);
+            GLPK.glp_set_obj_coef(lp, biomassValue+1, 1.);
 
             // Solve model
             parm = new glp_smcp();
@@ -257,7 +257,7 @@ public class FBA {
 
 
 
-            for(int j = 0;j < n;j++) {
+            for(int j = 0;j < noReactants;j++) {
 
                 retArray[j] = GLPK.glp_get_col_prim(lp, j+1);
 
