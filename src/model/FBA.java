@@ -105,188 +105,123 @@ public class FBA {
         }
     }
 
-    public double [] optimise() {
-        //create an augmented matrix for the simplex algorithm.
-        glp_prob lp;
-        glp_smcp parm;
-        glp_iocp parm2;
-        SWIGTYPE_p_int ind;
-        SWIGTYPE_p_double val;
-        int ret;
-        double [] retArray = new double [noReactants];
+    public double [] optimise() throws RuntimeException {
 
-        // describe the optimization problem
-        try {
-            // Create problem
-            lp = GLPK.glp_create_prob();
-            System.out.println("Problem created");
-            GLPK.glp_set_prob_name(lp, "myProblem");
+        double [] optimalFluxes = new double [noReactants];
 
-            GLPK.glp_add_rows(lp, noCompounds);
+        glp_prob problem = GLPK.glp_create_prob();
+        GLPK.glp_set_prob_name(problem, "FBA");
 
-            // Define columns
-            GLPK.glp_add_cols(lp, noReactants);//noOfReactions
+        setReactionBounds(problem);
+        setCompoundsToBeConserved(problem);
+        setSMatrix(problem);
+        setObjective(problem);
 
-            for(int k = 0;k < noReactants;k++) {
+        presolveProblemWithSimplex(problem);
+        solveWithIntegerOptimisation(problem);
+        
+        GLPK.glp_write_lp(problem, null, "problem.out");
+        GLPK.glp_print_mip(problem, "data.out");
 
-                GLPK.glp_set_col_name(lp, k+1, reactions[k].name);
-                GLPK.glp_set_col_kind(lp, k+1, GLPKConstants.GLP_CV);
-
-                if(reactions[k].lowerBound != null) {
-                    if(reactions[k].upperBound != null) {
-                        if(reactions[k].lowerBound < reactions[k].upperBound) {
-                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_DB, reactions[k].lowerBound, reactions[k].upperBound);
-                        }
-                        else {
-                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FX, reactions[k].lowerBound, reactions[k].upperBound);
-                        }
-                    }
-                    else {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_LO, reactions[k].lowerBound, 999.0);
-                    }
-                } else {
-                    if(reactions[k].upperBound != null) {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_UP, -999.0, reactions[k].upperBound);
-                    }
-                    else {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FR,-999.0, 999.0);
-                    }
-                }
-            }
-
-
-            // Create constraints
-            //first we count the number of entries;
-            int ne = 0;
-            for(int i = 0;i < noCompounds;i++) {
-                for(int j = 0;j < noReactants;j++) {
-                    if(S[i][j]!=0) {
-                        ne++;
-                    }
-                }
-                GLPK.glp_set_row_name(lp, i+1, reactantNames[i]);
-                GLPK.glp_set_row_bnds(lp, i+1, GLPKConstants.GLP_FX, 0.0, 0.0);
-            }
-
-            //System.out.println(ne);
-
-            //then we create the parts of the triplet
-            SWIGTYPE_p_int rowI = GLPK.new_intArray(ne+1);
-            SWIGTYPE_p_int colI = GLPK.new_intArray(ne+1);
-            SWIGTYPE_p_double values = GLPK.new_doubleArray(ne+1);
-
-            //then we populate
-            int counter = 1;
-            for(int i = 0;i < noCompounds;i++) {
-                for(int j = 0;j < noReactants;j++) {
-                    if(S[i][j]!=0) {
-                        GLPK.intArray_setitem(rowI, counter, i+1);
-                        GLPK.intArray_setitem(colI, counter, j+1);
-                        GLPK.doubleArray_setitem(values, counter, S[i][j]);
-
-                        counter++;
-                    }
-                }
-            }
-	    /*
-	    for(int bob = 1;bob <= ne;bob++) {
-		double a = GLPK.doubleArray_getitem(values,bob);
-		double x = GLPK.intArray_getitem(rowI,bob);
-		double y = GLPK.intArray_getitem(colI,bob);
-		System.out.println(x + "  " + y + " is " + a+ " ");
-	    }
-	    */
-
-            //add the matrix in one big glob
-            GLPK.glp_load_matrix(lp,ne,rowI,colI,values);
-
-
-
-            // Define objective
-            GLPK.glp_set_obj_name(lp, "z");
-            GLPK.glp_set_obj_dir(lp, GLPKConstants.GLP_MAX);
-            GLPK.glp_set_obj_coef(lp, biomassEquationIndex+1, 1.);
-
-            // Solve model
-            parm = new glp_smcp();
-
-            GLPK.glp_init_smcp(parm);
-            parm.setPresolve(GLPKConstants.GLP_ON);
-            parm.setMeth(GLPKConstants.GLP_DUALP);
-            parm.setMsg_lev(GLPKConstants.GLP_MSG_OFF);
-            //parm.setOut_frq(1);
-
-            ret = GLPK.glp_simplex(lp, parm);
-
-            parm2 = new glp_iocp();
-            GLPK.glp_init_iocp(parm2);
-            parm2.setMsg_lev(GLPKConstants.GLP_MSG_OFF);
-
-            ret = GLPK.glp_intopt(lp, null);
-            GLPK.glp_write_lp(lp, null, "problem.out");
-
-
-            //GLPK.glp_write_lp(lp, null, "problem.out");
-
-            // Retrieve solution
-            if (ret == 0) {
-                GLPK.glp_print_mip(lp, "data.out");
-            } else {
-                System.out.println("The problem could not be solved");
-                GLPK.glp_print_mip(lp, "data.out");
-            }
-
-
-
-            for(int j = 0;j < noReactants;j++) {
-
-                retArray[j] = GLPK.glp_get_col_prim(lp, j+1);
-
-            }
-            // Free memory
-            GLPK.glp_delete_prob(lp);
-        } catch (GlpkException ex) {
-            ex.printStackTrace();
+        for(int j=0; j < noReactants; j++) {
+            optimalFluxes[j] = GLPK.glp_get_col_prim(problem, j+1);
         }
+        GLPK.glp_delete_prob(problem);
 
-        return retArray;
+        return optimalFluxes;
 
     }
 
-    /*
-    public static void main(String[] args) {
-	int noReactions = Integer.valueOf(args[0]);
-	int noReagents = Integer.valueOf(args[1]);
-
-	fba example = new fba(noReactions,noReagents,args[2]);
-	example.input(args[2]);
-	//example.dump();
-	double [] answer = new double[noReactions];
-	answer = example.optimise();
-	
-	PrintWriter pwout;
-	FileWriter out;
-	
-	try {
-	    out = new FileWriter(args[2] + "sol.csv");
-	    pwout = new PrintWriter(out);
-
-	    for(int i = 0;i < noReactions;i++) {
-		pwout.write(example.reactionNames[i] + "," + example.reactionSpec[i]+ "," + answer[i] + "\n");
-	    }
-	
-	    pwout.close();
-	    try {
-		out.close();
-	    }
-	    catch (IOException e) {
-		e.printStackTrace();
-	    }
+	private void solveWithIntegerOptimisation(glp_prob problem) {
+		glp_iocp integerOptimiserParameters = new glp_iocp();
+        GLPK.glp_init_iocp(integerOptimiserParameters);
+        integerOptimiserParameters.setMsg_lev(GLPKConstants.GLP_MSG_OFF);
+        int returnCode = GLPK.glp_intopt(problem, null);
+        if(returnCode != 0){
+        	throw new GlpkException("Unable to solve the problem - look up error code and put an explanatory message for this code here.");
+        }
 	}
-	catch (IOException e)
-	    {
-		e.printStackTrace();
-	    }   
-    }
-    */
+
+	private void presolveProblemWithSimplex(glp_prob problem) {
+		glp_smcp simplexParameters = new glp_smcp();
+
+        GLPK.glp_init_smcp(simplexParameters);
+        simplexParameters.setPresolve(GLPKConstants.GLP_ON);
+        simplexParameters.setMeth(GLPKConstants.GLP_DUALP);
+        simplexParameters.setMsg_lev(GLPKConstants.GLP_MSG_OFF);
+
+        int returnCode = GLPK.glp_simplex(problem, simplexParameters);      
+        if(returnCode != 0){
+        	throw new GlpkException("Unable to solve the problem - look up error code and put an explanatory message for this code here.");
+        }
+	}
+
+	private void setObjective(glp_prob problem) {
+		GLPK.glp_set_obj_name(problem, "z");
+        GLPK.glp_set_obj_dir(problem, GLPKConstants.GLP_MAX);
+        GLPK.glp_set_obj_coef(problem, biomassEquationIndex+1, 1.);
+	}
+
+	private void setSMatrix(glp_prob lp) {
+		int entryCount = 0;
+		for(int i = 0; i < noCompounds; i++){
+			for(int j = 0; j < noReactants; j++){
+				if(S[i][j] != 0){
+					entryCount++;
+				}
+			}
+		}
+		
+		SWIGTYPE_p_int rowIndices = GLPK.new_intArray(entryCount+1);
+		SWIGTYPE_p_int colIndices = GLPK.new_intArray(entryCount+1);
+		SWIGTYPE_p_double values = GLPK.new_doubleArray(entryCount+1);
+
+		int counter = 1;
+		for(int i = 0;i < noCompounds;i++) {
+		    for(int j = 0;j < noReactants;j++) {
+		        if(S[i][j]!=0) {
+		            GLPK.intArray_setitem(rowIndices, counter, i+1);
+		            GLPK.intArray_setitem(colIndices, counter, j+1);
+		            GLPK.doubleArray_setitem(values, counter, S[i][j]);
+		            counter++;
+		        }
+		    }
+		}
+
+		GLPK.glp_load_matrix(lp,entryCount,rowIndices,colIndices,values);
+	}
+
+	private void setCompoundsToBeConserved(glp_prob lp) {
+		GLPK.glp_add_rows(lp, noCompounds);
+		for(int i = 0;i < noCompounds;i++) {
+		    GLPK.glp_set_row_name(lp, i+1, reactantNames[i]);
+		    GLPK.glp_set_row_bnds(lp, i+1, GLPKConstants.GLP_FX, 0.0, 0.0);
+		}
+	}
+
+	private void setReactionBounds(glp_prob lp) throws RuntimeException {
+		GLPK.glp_add_cols(lp, noReactants);
+
+		for(int k=0; k < noReactants; k++) {
+		    GLPK.glp_set_col_name(lp, k+1, reactions[k].name);
+		    GLPK.glp_set_col_kind(lp, k+1, GLPKConstants.GLP_CV); //continuous variable
+
+		    if(reactions[k].lowerBound != null && reactions[k].upperBound != null) {
+		        if(reactions[k].lowerBound < reactions[k].upperBound) {
+		            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_DB, reactions[k].lowerBound, reactions[k].upperBound);
+		        } else if(Math.abs(reactions[k].lowerBound - reactions[k].upperBound) < 0.0000001 ){
+		        	// bounds are close enough to be treated the same: floating point arithmetic issues
+		            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FX, reactions[k].lowerBound, reactions[k].lowerBound);
+		        } else {
+		        	throw new RuntimeException("Reaction " + reactions[k].name + " has a lower bound (" + reactions[k].lowerBound + ") greater than its upper bound (" + reactions[k].upperBound + ")");
+		        }
+		    } else if(reactions[k].lowerBound != null && reactions[k].upperBound == null){
+		        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_LO, reactions[k].lowerBound, 999.0);
+		    } else if(reactions[k].lowerBound == null && reactions[k].upperBound != null){
+		        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_UP, -999.0, reactions[k].upperBound);
+		    } else {
+		        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FR,-999.0, 999.0);
+		    }
+		}
+	}
 }

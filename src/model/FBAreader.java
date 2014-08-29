@@ -411,17 +411,6 @@ public class FBAreader {
 
             WritableWorkbook copy = Workbook.createWorkbook(new File(outputFileName), input);
 
-
-            //write out a copy of the S Matrix to another sheet.
-	    /*
-	    for(int i = 0;i < noCompounds;i++) {	
-		for(int j = 0;j < noReactions;j++) {
-		    jxl.write.Number number = new jxl.write.Number(i+1,j+1,S[i][j]);
-		    sheet.addCell(number);
-		}
-	    }
-	    */
-
             WritableSheet sheet2 = copy.getSheet(1);
             WritableSheet sheet3 = copy.getSheet(2);
             jxl.write.Label label;
