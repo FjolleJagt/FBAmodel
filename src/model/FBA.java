@@ -16,15 +16,10 @@ public class FBA {
 
     double [][] S; // Stoichiometry matrix
     double [] v; //Flux vector
-    double [] lowerBounds; // lower bounds
-    double [] upperBounds; // upper bounds
-    double [] biomassVector; // biomass vector;
-    boolean [] isLowerBoundActive;
-    boolean [] isUpperBoundActive;
-    String [] reactionNames;
+    Reaction [] reactions;
     String [] reactantNames;
     String [] reactionSpec;
-    int biomassValue; //biomass indicator
+    int biomassEquationIndex; //biomass indicator
 
     public FBA(int noReactants, int noCompounds) {
         this.noReactants = noReactants;
@@ -32,13 +27,7 @@ public class FBA {
 
         S = new double [noCompounds][noReactants];
         v = new double [noReactants];
-        lowerBounds = new double [noReactants];
-        isLowerBoundActive = new boolean [noReactants];
-        upperBounds = new double [noReactants];
-        isUpperBoundActive = new boolean [noReactants];
-        biomassVector = new double [noReactants];
 
-        reactionNames = new String [noReactants];
         reactantNames = new String [noCompounds];
 
     }
@@ -52,31 +41,24 @@ public class FBA {
 
     }
 
-    public void loadVectors(double [] a, double [] b, double [] c, boolean [] lowerBound, boolean [] upperBound) {
+    public void loadReactions(Reaction[] reactions) {
+    	this.reactions = reactions;
         for(int j = 0;j < noReactants;j++) {
-            this.lowerBounds[j] = a[j];
-            this.upperBounds[j] = b[j];
-            this.biomassVector[j] = c[j];
-            this.isLowerBoundActive[j] = lowerBound[j];
-            this.isUpperBoundActive[j] = upperBound[j];
-            if(c[j] > 0) {
-                biomassValue = j;
+            if(reactions[j].biomassCoefficient > 0) {
+                biomassEquationIndex = j;
             }
         }
     }
 
-    public void loadNames(String [] cn, String [] rn) {
-        for(int j = 0;j < noReactants;j++) {
-            reactionNames[j] = rn[j];
-        }
+    public void loadNames(String [] compoundNames) {
         for(int i = 0;i < noCompounds;i++) {
-            reactantNames[i] = cn[i];
+            reactantNames[i] = compoundNames[i];
         }
     }
 
     public void dump() {
         for(int j = 0;j < noReactants;j++) {
-            System.out.print(reactionNames[j] + " : ");
+            System.out.print(reactions[j].name + " : ");
             boolean firstone = true;
             for(int i = 0;i < noCompounds;i++) {
 
@@ -96,7 +78,7 @@ public class FBA {
                 }
             }
 
-            if(lowerBounds[j] == 0) {
+            if(reactions[j].lowerBound == 0) {
                 System.out.print("--> ");
             }
             else {
@@ -147,28 +129,27 @@ public class FBA {
 
             for(int k = 0;k < noReactants;k++) {
 
-                GLPK.glp_set_col_name(lp, k+1, reactionNames[k]);
+                GLPK.glp_set_col_name(lp, k+1, reactions[k].name);
                 GLPK.glp_set_col_kind(lp, k+1, GLPKConstants.GLP_CV);
 
-                if(isLowerBoundActive[k]) {
-                    if(isUpperBoundActive[k]) {
-                        if(lowerBounds[k] < upperBounds[k]) {
-                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_DB, lowerBounds[k], upperBounds[k]);
+                if(reactions[k].lowerBound != null) {
+                    if(reactions[k].upperBound != null) {
+                        if(reactions[k].lowerBound < reactions[k].upperBound) {
+                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_DB, reactions[k].lowerBound, reactions[k].upperBound);
                         }
                         else {
-                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FX, lowerBounds[k], upperBounds[k]);
+                            GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FX, reactions[k].lowerBound, reactions[k].upperBound);
                         }
                     }
                     else {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_LO, lowerBounds[k], upperBounds[k]);
+                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_LO, reactions[k].lowerBound, 999.0);
                     }
-                }
-                else {
-                    if(isUpperBoundActive[k]) {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_UP, lowerBounds[k], upperBounds[k]);
+                } else {
+                    if(reactions[k].upperBound != null) {
+                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_UP, -999.0, reactions[k].upperBound);
                     }
                     else {
-                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FR, lowerBounds[k], upperBounds[k]);
+                        GLPK.glp_set_col_bnds(lp, k+1, GLPKConstants.GLP_FR,-999.0, 999.0);
                     }
                 }
             }
@@ -224,7 +205,7 @@ public class FBA {
             // Define objective
             GLPK.glp_set_obj_name(lp, "z");
             GLPK.glp_set_obj_dir(lp, GLPKConstants.GLP_MAX);
-            GLPK.glp_set_obj_coef(lp, biomassValue+1, 1.);
+            GLPK.glp_set_obj_coef(lp, biomassEquationIndex+1, 1.);
 
             // Solve model
             parm = new glp_smcp();

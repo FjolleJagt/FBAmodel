@@ -4,84 +4,79 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class TestRig {
-	private FBAreader R;
+	private FBAreader fbaReader;
 	
 	public void test(){
-		R = new FBAreader("resources/in.xls","resources/out.xls");
+		fbaReader = new FBAreader("resources/in.xls","resources/out.xls");
 	
-		R.createSmatrix();
-		boolean [] inBiomass = new boolean[R.noBiomass];
+		fbaReader.createSmatrix();
+		boolean [] inBiomass = new boolean[fbaReader.noBiomass];
 	
 		ArrayList<Integer> onesNotIn = new ArrayList<Integer>();
 		for(int k = 0;k < inBiomass.length;k++) {
-			inBiomass[k] = R.biomassIn[k];
+			inBiomass[k] = fbaReader.biomassIn[k];
 			if(!inBiomass[k]) {
 				onesNotIn.add(k);
 			}
 		}
 	
-		double [] answer = new double[R.noReactions];
+		double [] answer = new double[fbaReader.noReactions];
 	
-		R.createBiomassReaction(inBiomass);
+		fbaReader.createBiomassReaction(inBiomass);
 	
-		FBA F = new FBA(R.noReactions,R.noCompounds);
+		FBA fba = new FBA(fbaReader.noReactions,fbaReader.noCompounds);
 	
-		F.loadS(R.S);			
-		F.loadVectors(R.a,R.b,R.c,R.lb,R.ub);			
-		F.loadNames(R.compoundNames,R.reactionNames);
+		fba.loadS(fbaReader.S);			
+		fba.loadReactions(fbaReader.reactions);			
+		fba.loadNames(fbaReader.compoundNames);
 	
-		answer = F.optimise();
+		answer = fba.optimise();
 	
 		//Now remove anything futile -- secondary minimisation
 	
 		//Lock the growth rate
-		R.a[R.noReactions-1] =  answer[R.noReactions-1];
-		R.b[R.noReactions-1] =  answer[R.noReactions-1];
-		R.c[R.noReactions-1] = 0;
-		R.ub[R.noReactions-1] = true;
-		R.lb[R.noReactions-1] = true;
+		fbaReader.reactions[fbaReader.noReactions-1].lowerBound =  answer[fbaReader.noReactions-1];
+		fbaReader.reactions[fbaReader.noReactions-1].upperBound =  answer[fbaReader.noReactions-1];
+		fbaReader.reactions[fbaReader.noReactions-1].biomassCoefficient = 0.0;
 	
-		//Minimise everthing else
-		for(int k = 0;k < R.noReactions - 2;k++) {
+		//Minimise everything else
+		for(int k = 0;k < fbaReader.noReactions - 2;k++) {
 			if(answer[k] > 0) {
-				if(R.b[k] == 1000) {
-					R.c[k] = -1;		
-					if(R.a[k] < 0) {
-						R.a[k] = 0;
+				if(fbaReader.reactions[k].upperBound.equals(Double.valueOf(1000))) {
+					fbaReader.reactions[k].biomassCoefficient = -1.0;		
+					if(fbaReader.reactions[k].lowerBound.doubleValue() < 0) {
+						fbaReader.reactions[k].lowerBound = 0.0;
 					}
-					R.lb[k] = true;
 				}	
-			}
-			else {
-				if(R.a[k]==-1000) {
-					R.c[k] = 1;	
-					if(R.b[k] > 0) {
-						R.b[k] = 0;
+			} else {
+				if(fbaReader.reactions[k].lowerBound.equals(Double.valueOf(-1000))) {
+					fbaReader.reactions[k].biomassCoefficient = 1.0;	
+					if(fbaReader.reactions[k].upperBound.doubleValue() > 0) {
+						fbaReader.reactions[k].upperBound = 0.0;
 					}
-					R.ub[k] = true;
 				}
 			}
 		}		
 	
-		FBA F2 = new FBA(R.noReactions,R.noCompounds);
+		FBA F2 = new FBA(fbaReader.noReactions,fbaReader.noCompounds);
 	
-		F2.loadS(R.S);           
-		F2.loadVectors(R.a,R.b,R.c,R.lb,R.ub);   
+		F2.loadS(fbaReader.S);           
+		F2.loadReactions(fbaReader.reactions);   
 	
-		F2.loadNames(R.compoundNames,R.reactionNames);
+		F2.loadNames(fbaReader.compoundNames);
 	
 		answer = F2.optimise();
 	
 		//To here
 	
-		System.out.println("Growth is " + answer[R.noReactions-1]);
+		System.out.println("Growth is " + answer[fbaReader.noReactions-1]);
 	
 		for(int k = 0;k < inBiomass.length;k++) {
-			R.biomassIn[k] = inBiomass[k];		   
+			fbaReader.biomassIn[k] = inBiomass[k];		   
 		}
 	
 		try {		    
-			R.writeSmatrix(answer);
+			fbaReader.writeSmatrix(answer);
 		}
 		catch (IOException e) {
 			e.printStackTrace();

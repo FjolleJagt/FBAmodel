@@ -21,14 +21,7 @@ public class FBAreader {
 
     String [] compoundNames;
 
-    String [] reactionNames;
-    String [] reactions;
-    boolean [] lb;
-    boolean [] ub;
-    double [] a;
-    double [] b;
-    double [] c;
-
+    Reaction [] reactions;
     String [] biomassNames;
     double [] biomassComp;
     boolean [] biomassIn;
@@ -70,13 +63,7 @@ public class FBAreader {
 
         compoundNames = new String [noCompounds+1];
         usedCompounds = new boolean [noCompounds+1];
-        reactionNames = new String [noReactions+2];
-        reactions = new String [noReactions+2];
-        lb = new boolean [noReactions+2];
-        ub = new boolean [noReactions+2];
-        a = new double [noReactions+2];
-        b = new double [noReactions+2];
-        c = new double [noReactions+2];
+        reactions = new Reaction[noReactions+2];
 
         biomassNames = new String [noBiomass];
         biomassComp = new double [noBiomass];
@@ -92,21 +79,21 @@ public class FBAreader {
         System.out.println("Compounds in");
 
         for(int j = 0;j < noReactions;j++) {
-            reactionNames[j] = reactionList.getCell(0,j).getContents();
-            reactions[j] = reactionList.getCell(1,j).getContents();
+        	reactions[j] = new Reaction();
+            reactions[j].name = reactionList.getCell(0,j).getContents();
+            reactions[j].equation = reactionList.getCell(1,j).getContents();
 
             Cell lq = reactionList.getCell(2,j);
 
             if(lq.getType() == CellType.LABEL) {
                 String lc = lq.getContents();
                 if(lc.compareTo("-infty") == 0) {
-                    lb[j] = false;
+                    reactions[j].lowerBound = null;
                 }
             }
             else {
                 NumberCell nc = (NumberCell) lq;
-                a[j] = nc.getValue();
-                lb[j] = true;
+                reactions[j].lowerBound = nc.getValue();
             }
 
 
@@ -115,19 +102,16 @@ public class FBAreader {
             if(uq.getType() == CellType.LABEL) {
                 String uc = uq.getContents();
                 if(uc.compareTo("infty") == 0) {
-                    ub[j] = false;
+                    reactions[j].upperBound = null;
                 }
             }
             else {
                 NumberCell nc = (NumberCell) uq;
-                b[j] = nc.getValue();
-                ub[j] = true;
+                reactions[j].upperBound = nc.getValue();
             }
 
 
-            c[j] = Double.valueOf(reactionList.getCell(4,j).getContents());
-
-            System.out.println(j + ": " + reactionNames[j] + " " + reactions[j] + " LB: " + a[j] + " UB: " + b[j]);
+            reactions[j].biomassCoefficient = Double.valueOf(reactionList.getCell(4,j).getContents());
 
         }
 
@@ -193,18 +177,18 @@ public class FBAreader {
 	    System.out.print("\n");
 	    */
             //pad to make sure bits splits it
-            reactions[j] = reactions[j] + " ";
+            reactions[j].equation = reactions[j].equation + " ";
 
             //split the reactions in the two bits either side of the operator
             //note reversibility as we go
             String [] bits = new String [2];
 
 
-            if(reactions[j].lastIndexOf("<==>") < 0) {
-                bits = reactions[j].split("-->");
+            if(reactions[j].equation.lastIndexOf("<==>") < 0) {
+                bits = reactions[j].equation.split("-->");
             }
             else {
-                bits = reactions[j].split("<==>");
+                bits = reactions[j].equation.split("<==>");
 
                 //This is causing the problem, its overwriting what we need...
 		/*
@@ -271,7 +255,7 @@ public class FBAreader {
                     //System.out.print("\n");
                 }
                 if(nothingFound) {
-                    System.out.println(negParts[k] + " was not found in reaction no " + j + ", " + reactionNames[j]);
+                    System.out.println(negParts[k] + " was not found in reaction no " + j + ", " + reactions[j].name);
                 }
             }
 
@@ -325,7 +309,7 @@ public class FBAreader {
 
                 }
                 if(nothingFound) {
-                    System.out.println(posParts[k] + " was not found in reaction no " + j + ", " + reactionNames[j]);
+                    System.out.println(posParts[k] + " was not found in reaction no " + j + ", " + reactions[j].name);
                 }
             }
 
@@ -344,9 +328,12 @@ public class FBAreader {
 
         noReactions++; //one for the biomass reaction
         noReactions++; //one for growth
+        
+        reactions[noReactions-2] = new Reaction();
+        reactions[noReactions-1] = new Reaction();
 
-        reactionNames[noReactions-2] = "Biomass reaction";
-        reactionNames[noReactions-1] = "Growth";
+        reactions[noReactions-2].name = "Biomass reaction";
+        reactions[noReactions-1].name = "Growth";
 
         String pos="",neg="";
         boolean firstN = true;
@@ -384,8 +371,8 @@ public class FBAreader {
             //System.out.println(compoundNames[biomassNo[k]] + " is in with value " + biomassComp[k] + " should be the same as " + S[biomassNo[k]][noReactions-2]);
         }
 
-        reactions[noReactions-2] = neg + "-->" + pos;
-        reactions[noReactions-1] = "Biomass-->";
+        reactions[noReactions-2].equation = neg + "-->" + pos;
+        reactions[noReactions-1].equation = "Biomass-->";
 
 
         noCompounds++; //one for the biomass
@@ -395,17 +382,13 @@ public class FBAreader {
         S[noCompounds-1][noReactions-2] = 1;
         S[noCompounds-1][noReactions-1] = -1;
 
-        a[noReactions-2] = 0;
-        b[noReactions-2] = 999;
-        c[noReactions-2] = 0;
-        lb[noReactions-2] = true;
-        ub[noReactions-2] = false;
+        reactions[noReactions-2].lowerBound = 0.0;
+        reactions[noReactions-2].upperBound = null;
+        reactions[noReactions-2].biomassCoefficient = 0.0;
 
-        a[noReactions-1] = 0;
-        b[noReactions-1] = 999;
-        c[noReactions-1] = 1;
-        lb[noReactions-1] = true;
-        ub[noReactions-1] = false;
+        reactions[noReactions-1].lowerBound = 0.0;
+        reactions[noReactions-1].upperBound = null;
+        reactions[noReactions-1].biomassCoefficient = 1.0;
 
 
         //Create new line in S matrix
@@ -444,25 +427,37 @@ public class FBAreader {
             jxl.write.Label label;
             jxl.write.Number number;
 
-            label = new jxl.write.Label(0,noReactions-2, reactionNames[noReactions-2]);
+            label = new jxl.write.Label(0,noReactions-2, reactions[noReactions-2].name);
             sheet2.addCell(label);
-            label = new jxl.write.Label(1,noReactions-2, reactions[noReactions-2]);
+            label = new jxl.write.Label(1,noReactions-2, reactions[noReactions-2].equation);
             sheet2.addCell(label);
-            number = new jxl.write.Number(2,noReactions-2, a[noReactions-2]);
+            if(reactions[noReactions-2].lowerBound != null){
+            	number = new jxl.write.Number(2,noReactions-2, reactions[noReactions-2].lowerBound);
+            	sheet2.addCell(number);
+            } else {
+            	sheet2.addCell(new jxl.write.Number(2,noReactions-2,0.0));
+            }
+            if(reactions[noReactions-2].upperBound != null){
+            	number = new jxl.write.Number(3,noReactions-2, reactions[noReactions-2].upperBound);
+            	sheet2.addCell(number);
+            } else {
+            	sheet2.addCell(new jxl.write.Number(3,noReactions-2,999));
+            }
+            number = new jxl.write.Number(4,noReactions-2, reactions[noReactions-2].biomassCoefficient);
             sheet2.addCell(number);
-            number = new jxl.write.Number(3,noReactions-2, b[noReactions-2]);
-            sheet2.addCell(number);
-            number = new jxl.write.Number(4,noReactions-2, c[noReactions-2]);
-            sheet2.addCell(number);
-            label = new jxl.write.Label(0,noReactions-1, reactionNames[noReactions-1]);
+            label = new jxl.write.Label(0,noReactions-1, reactions[noReactions-1].name);
             sheet2.addCell(label);
-            label = new jxl.write.Label(1,noReactions-1, reactions[noReactions-1]);
+            label = new jxl.write.Label(1,noReactions-1, reactions[noReactions-1].equation);
             sheet2.addCell(label);
-            number = new jxl.write.Number(2,noReactions-1, a[noReactions-1]);
-            sheet2.addCell(number);
-            number = new jxl.write.Number(3,noReactions-1, b[noReactions-1]);
-            sheet2.addCell(number);
-            number = new jxl.write.Number(4,noReactions-1, c[noReactions-1]);
+            if(reactions[noReactions-1].lowerBound != null){
+            	number = new jxl.write.Number(2,noReactions-1, reactions[noReactions-1].lowerBound);
+            	sheet2.addCell(number);
+            }
+            if(reactions[noReactions-1].upperBound != null){
+            	number = new jxl.write.Number(3,noReactions-1, reactions[noReactions-1].upperBound);
+            	sheet2.addCell(number);
+            }
+            number = new jxl.write.Number(4,noReactions-1, reactions[noReactions-1].biomassCoefficient);
             sheet2.addCell(number);
 
             for(int j = 0;j < noReactions;j++) {
@@ -504,27 +499,19 @@ public class FBAreader {
 
     public static void main(String[] args) {
 
-        FBAreader R = new FBAreader(args[0],args[1]);
-	/*
-	for(int i = 0;i < R.noCompounds;i++) {
-	    System.out.println(R.compoundNames[i]);
-	}
-	
-	for(int j = 0;j < R.noReactions;j++) {
-	    System.out.println(R.reactionNames[j] + " " + R.reactions[j]);
-	}
-	*/
-        R.createSmatrix();
+        FBAreader fbaReader = new FBAreader(args[0],args[1]);
+
+        fbaReader.createSmatrix();
         System.out.print("Blank,");
-        for(int i = 0;i < R.noCompounds;i++) {
-            System.out.print(R.compoundNames[i] + ",");
+        for(int i = 0;i < fbaReader.noCompounds;i++) {
+            System.out.print(fbaReader.compoundNames[i] + ",");
         }
         System.out.print("\n");
 
-        for(int j = 0;j < R.noReactions;j++) {
-            System.out.print(R.reactionNames[j] + ",");
-            for(int i = 0;i < R.noCompounds;i++) {
-                System.out.print(R.S[i][j] + ",");
+        for(int j = 0;j < fbaReader.noReactions;j++) {
+            System.out.print(fbaReader.reactions[j].name + ",");
+            for(int i = 0;i < fbaReader.noCompounds;i++) {
+                System.out.print(fbaReader.S[i][j] + ",");
             }
             System.out.print("\n");
         }
@@ -537,20 +524,18 @@ public class FBAreader {
 	}
 	*/
 
-        FBA F = new FBA(R.noReactions,R.noCompounds);
+        FBA fba = new FBA(fbaReader.noReactions,fbaReader.noCompounds);
 
-        F.loadS(R.S);
+        fba.loadS(fbaReader.S);
 
-        System.out.println(R.a[933]);
-
-        F.loadVectors(R.a,R.b,R.c,R.lb,R.ub);
-        F.loadNames(R.compoundNames,R.reactionNames);
+        fba.loadReactions(fbaReader.reactions);
+        fba.loadNames(fbaReader.compoundNames);
 
 
-        double [] answer = new double[R.noReactions];
-        answer = F.optimise();
+        double [] answer = new double[fbaReader.noReactions];
+        answer = fba.optimise();
         try {
-            R.writeSmatrix(answer);
+            fbaReader.writeSmatrix(answer);
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -564,8 +549,8 @@ public class FBAreader {
             out = new FileWriter("sol.csv");
             pwout = new PrintWriter(out);
 
-            for(int i = 0;i < R.noReactions;i++) {
-                pwout.write(R.reactionNames[i] + "," + R.reactions[i]+ "," + answer[i] + "\n");
+            for(int i = 0;i < fbaReader.noReactions;i++) {
+                pwout.write(fbaReader.reactions[i].name + "," + fbaReader.reactions[i]+ "," + answer[i] + "\n");
             }
 
             pwout.close();
