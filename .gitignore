@@ -3,4 +3,5 @@ resources/in.xls
 resources/out.xls
 resources/out.csv
 resources/old_out.xls
+resources/old_out.csv
 *.out
