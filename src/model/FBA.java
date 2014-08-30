@@ -137,7 +137,11 @@ public class FBA {
         GLPK.glp_init_iocp(integerOptimiserParameters);
         integerOptimiserParameters.setMsg_lev(GLPKConstants.GLP_MSG_OFF);
         int returnCode = GLPK.glp_intopt(problem, null);
-        if(returnCode != 0){
+        if(returnCode == GLPK.GLP_ENODFS){
+        	throw new GlpkException("Unable to start the search, your bounds aren't restrictive enough!");
+        } else if(returnCode == GLPK.GLP_ENOPFS){
+        	throw new GlpkException("Unable to start the search, your bounds are too restrictive!");
+        } else if(returnCode != 0){
         	throw new GlpkException("Unable to solve the problem - look up error code and put an explanatory message for this code here.");
         }
 	}
