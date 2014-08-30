@@ -12,7 +12,7 @@ import org.gnu.glpk.glp_smcp;
 public class FBA {
 
     int noCompounds; // #compounds
-    int noReactants; // #reactions
+    int noReactions; // #reactions
 
     double [][] S; // Stoichiometry matrix
     double [] v; //Flux vector
@@ -22,7 +22,7 @@ public class FBA {
     int biomassEquationIndex; //biomass indicator
 
     public FBA(int noReactants, int noCompounds) {
-        this.noReactants = noReactants;
+        this.noReactions = noReactants;
         this.noCompounds = noCompounds;
 
         S = new double [noCompounds][noReactants];
@@ -34,7 +34,7 @@ public class FBA {
 
     public void loadS(double [][] S) {
         for(int i = 0;i < noCompounds;i++) {
-            for(int j = 0;j < noReactants;j++) {
+            for(int j = 0;j < noReactions;j++) {
                 this.S[i][j] = S[i][j];
             }
         }
@@ -43,7 +43,7 @@ public class FBA {
 
     public void loadReactions(Reaction[] reactions) {
     	this.reactions = reactions;
-        for(int j = 0;j < noReactants;j++) {
+        for(int j = 0;j < noReactions;j++) {
             if(reactions[j].optimisationCoefficient > 0) {
                 biomassEquationIndex = j;
             }
@@ -57,7 +57,7 @@ public class FBA {
     }
 
     public void dump() {
-        for(int j = 0;j < noReactants;j++) {
+        for(int j = 0;j < noReactions;j++) {
             System.out.print(reactions[j].name + " : ");
             boolean firstone = true;
             for(int i = 0;i < noCompounds;i++) {
@@ -107,7 +107,7 @@ public class FBA {
 
     public double [] optimise() throws RuntimeException {
 
-        double [] optimalFluxes = new double [noReactants];
+        double [] optimalFluxes = new double [noReactions];
 
         glp_prob problem = GLPK.glp_create_prob();
         GLPK.glp_set_prob_name(problem, "FBA");
@@ -123,7 +123,7 @@ public class FBA {
         GLPK.glp_write_lp(problem, null, "problem.out");
         GLPK.glp_print_mip(problem, "data.out");
 
-        for(int j=0; j < noReactants; j++) {
+        for(int j=0; j < noReactions; j++) {
             optimalFluxes[j] = GLPK.glp_get_col_prim(problem, j+1);
         }
         GLPK.glp_delete_prob(problem);
@@ -174,7 +174,7 @@ public class FBA {
 	private void setSMatrix(glp_prob lp) {
 		int entryCount = 0;
 		for(int i = 0; i < noCompounds; i++){
-			for(int j = 0; j < noReactants; j++){
+			for(int j = 0; j < noReactions; j++){
 				if(S[i][j] != 0){
 					entryCount++;
 				}
@@ -187,7 +187,7 @@ public class FBA {
 
 		int counter = 1;
 		for(int i = 0;i < noCompounds;i++) {
-		    for(int j = 0;j < noReactants;j++) {
+		    for(int j = 0;j < noReactions;j++) {
 		        if(S[i][j]!=0) {
 		            GLPK.intArray_setitem(rowIndices, counter, i+1);
 		            GLPK.intArray_setitem(colIndices, counter, j+1);
@@ -209,9 +209,9 @@ public class FBA {
 	}
 
 	private void setReactionBounds(glp_prob lp) throws RuntimeException {
-		GLPK.glp_add_cols(lp, noReactants);
+		GLPK.glp_add_cols(lp, noReactions);
 
-		for(int k=0; k < noReactants; k++) {
+		for(int k=0; k < noReactions; k++) {
 		    GLPK.glp_set_col_name(lp, k+1, reactions[k].name);
 		    GLPK.glp_set_col_kind(lp, k+1, GLPKConstants.GLP_CV); //continuous variable
 
