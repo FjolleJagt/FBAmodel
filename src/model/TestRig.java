@@ -28,7 +28,7 @@ public class TestRig {
 	
 		fba.loadS(fbaReader.S);			
 		fba.loadReactions(fbaReader.reactions);			
-		fba.loadNames(fbaReader.compoundNames);
+		fba.loadNames(fbaReader.compounds);
 	
 		answer = fba.optimise();
 	
@@ -63,7 +63,7 @@ public class TestRig {
 		F2.loadS(fbaReader.S);           
 		F2.loadReactions(fbaReader.reactions);   
 	
-		F2.loadNames(fbaReader.compoundNames);
+		F2.loadNames(fbaReader.compounds);
 	
 		answer = F2.optimise();
 	

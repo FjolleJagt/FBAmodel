@@ -18,10 +18,10 @@ public class FBAreader {
     int noCompounds;
     int noBiomass;
 
-    String [] compoundNames;
+    Compound [] compounds;
 
     Reaction [] reactions;
-    String [] biomassNames;
+    Compound [] biomassNames;
     double [] biomassComp;
     boolean [] biomassIn;
     int [] biomassNo;
@@ -57,17 +57,17 @@ public class FBAreader {
         noCompounds = compoundSheet.getRows();
         noBiomass = biomassSheet.getRows();
 
-        compoundNames = new String [noCompounds+1];
+        compounds = new Compound [noCompounds+1];
         usedCompounds = new boolean [noCompounds+1];
         
 
-        biomassNames = new String [noBiomass];
+        biomassNames = new Compound [noBiomass];
         biomassComp = new double [noBiomass];
         biomassIn = new boolean [noBiomass];
 
         for(int i = 0;i < noCompounds;i++) {
             usedCompounds[i] = false;
-            compoundNames[i] = compoundSheet.getCell(0,i).getContents();
+            compounds[i] = new Compound(compoundSheet.getCell(0,i).getContents());
         }
 
         usedCompounds[noCompounds]=false;
@@ -75,7 +75,7 @@ public class FBAreader {
         loadReactions();
 
         for(int k = 0;k < noBiomass;k++) {
-            biomassNames[k] = biomassSheet.getCell(0,k).getContents();
+            biomassNames[k] = new Compound(biomassSheet.getCell(0,k).getContents());
             Cell nc1 = biomassSheet.getCell(1,k);
             NumberCell nc = (NumberCell) nc1;
             biomassComp[k] = Double.valueOf(nc.getValue());
@@ -89,7 +89,7 @@ public class FBAreader {
 
         for(int i = 0;i < noCompounds;i++) {
             for(int k = 0;k < noBiomass;k++) {
-                if(biomassNames[k].equals(compoundNames[i])) {
+                if(biomassNames[k].equals(compounds[i])) {
                     biomassNo[k] = i;
                 }
             }
@@ -198,7 +198,7 @@ public class FBAreader {
 
                 //now find them...
                 for(int i = 0;i < noCompounds;i++) {
-                    if(negParts[k].equals(compoundNames[i])) {
+                    if(negParts[k].equals(compounds[i].name)) {
                         S[i][j] = -1*negStoich[k];
                         nothingFound = false;
                         usedCompounds[i] = true;
@@ -245,7 +245,7 @@ public class FBAreader {
 
                 //now find them...
                 for(int i = 0;i < noCompounds;i++) {
-                    if(posParts[k].equals(compoundNames[i])) {
+                    if(posParts[k].equals(compounds[i].name)) {
                         S[i][j] = posStoich[k];
                         nothingFound = false;
                         usedCompounds[i] = true;
@@ -262,7 +262,7 @@ public class FBAreader {
         }
         for(int i = 0;i < noCompounds;i++) {
             if(!usedCompounds[i]) {
-                System.out.println("Compound no " + i + ", which is " + compoundNames[i] + " has not been used");
+                System.out.println("Compound no " + i + ", which is " + compounds[i].name + " has not been used");
             }
         }
 
@@ -287,26 +287,26 @@ public class FBAreader {
 
         for(int k = 0;k < noBiomass;k++) {
             if(in[k]) {
-                System.out.println(compoundNames[biomassNo[k]] + " is in with value " + biomassComp[k]);
+                System.out.println(compounds[biomassNo[k]].name + " is in with value " + biomassComp[k]);
 
                 S[biomassNo[k]][noReactions-2] = biomassComp[k];
 
                 if(Double.valueOf(biomassComp[k])< 0) {
                     if(firstN) {
-                        neg+=String.valueOf(-1*biomassComp[k]) + "*" + compoundNames[biomassNo[k]];
+                        neg+=String.valueOf(-1*biomassComp[k]) + "*" + compounds[biomassNo[k]].name;
                         firstN = false;
                     }
                     else {
-                        neg+="+" + String.valueOf(-1*biomassComp[k]) + "*" + compoundNames[biomassNo[k]];
+                        neg+="+" + String.valueOf(-1*biomassComp[k]) + "*" + compounds[biomassNo[k]].name;
                     }
                 }
                 else if(Double.valueOf(biomassComp[k]) > 0) {
                     if(firstP) {
-                        pos+=String.valueOf(biomassComp[k]) + "*" + compoundNames[biomassNo[k]];
+                        pos+=String.valueOf(biomassComp[k]) + "*" + compounds[biomassNo[k]].name;
                         firstP = false;
                     }
                     else {
-                        pos+="+" + String.valueOf(biomassComp[k]) + "*" + compoundNames[biomassNo[k]];
+                        pos+="+" + String.valueOf(biomassComp[k]) + "*" + compounds[biomassNo[k]].name;
                     }
                 }
             }
@@ -321,7 +321,7 @@ public class FBAreader {
 
         noCompounds++; //one for the biomass
 
-        compoundNames[noCompounds-1] = "Biomass";
+        compounds[noCompounds-1] = new Compound("Biomass");
 
         S[noCompounds-1][noReactions-2] = 1;
         S[noCompounds-1][noReactions-1] = -1;
@@ -448,7 +448,7 @@ public class FBAreader {
         fba.loadS(fbaReader.S);
 
         fba.loadReactions(fbaReader.reactions);
-        fba.loadNames(fbaReader.compoundNames);
+        fba.loadNames(fbaReader.compounds);
 
 
         double [] answer = new double[fbaReader.noReactions];

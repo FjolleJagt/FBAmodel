@@ -17,18 +17,18 @@ public class FBA {
     double [][] S; // Stoichiometry matrix
     double [] v; //Flux vector
     Reaction [] reactions;
-    String [] reactantNames;
+    Compound [] compounds;
     String [] reactionSpec;
     int biomassEquationIndex; //biomass indicator
 
-    public FBA(int noReactants, int noCompounds) {
-        this.noReactions = noReactants;
+    public FBA(int noReactions, int noCompounds) {
+        this.noReactions = noReactions;
         this.noCompounds = noCompounds;
 
-        S = new double [noCompounds][noReactants];
-        v = new double [noReactants];
+        S = new double [noCompounds][noReactions];
+        v = new double [noReactions];
 
-        reactantNames = new String [noCompounds];
+        compounds = new Compound [noCompounds];
 
     }
 
@@ -38,7 +38,6 @@ public class FBA {
                 this.S[i][j] = S[i][j];
             }
         }
-
     }
 
     public void loadReactions(Reaction[] reactions) {
@@ -50,9 +49,9 @@ public class FBA {
         }
     }
 
-    public void loadNames(String [] compoundNames) {
+    public void loadNames(Compound [] compounds) {
         for(int i = 0;i < noCompounds;i++) {
-            reactantNames[i] = compoundNames[i];
+            this.compounds[i] = compounds[i];
         }
     }
 
@@ -73,7 +72,7 @@ public class FBA {
                     if(S[i][j]!=-1) {
                         System.out.print((-1*S[i][j]) + "*");
                     }
-                    System.out.print(reactantNames[i]+" ");
+                    System.out.print(compounds[i]+" ");
 
                 }
             }
@@ -98,7 +97,7 @@ public class FBA {
                     if(S[i][j]!=1) {
                         System.out.print(S[i][j] + "*");
                     }
-                    System.out.print(reactantNames[i] + " ");
+                    System.out.print(compounds[i] + " ");
                 }
             }
             System.out.print("\n");
@@ -203,7 +202,7 @@ public class FBA {
 	private void setCompoundsToBeConserved(glp_prob lp) {
 		GLPK.glp_add_rows(lp, noCompounds);
 		for(int i = 0;i < noCompounds;i++) {
-		    GLPK.glp_set_row_name(lp, i+1, reactantNames[i]);
+		    GLPK.glp_set_row_name(lp, i+1, compounds[i].name);
 		    GLPK.glp_set_row_bnds(lp, i+1, GLPKConstants.GLP_FX, 0.0, 0.0);
 		}
 	}
