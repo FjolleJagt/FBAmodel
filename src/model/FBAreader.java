@@ -1,7 +1,7 @@
 package model;
 
 import java.io.*;
-import java.io.File;
+
 import jxl.*;
 import jxl.write.*;
 
@@ -135,6 +135,7 @@ public class FBAreader {
         }
 
         input.close();
+        System.out.println(noCompounds +" compounds, " + noReactions + " reactions loaded");
 
     }
 
