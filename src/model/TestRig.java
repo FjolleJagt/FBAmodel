@@ -37,20 +37,20 @@ public class TestRig {
 		//Lock the growth rate
 		fbaReader.reactions[fbaReader.noReactions-1].lowerBound =  answer[fbaReader.noReactions-1];
 		fbaReader.reactions[fbaReader.noReactions-1].upperBound =  answer[fbaReader.noReactions-1];
-		fbaReader.reactions[fbaReader.noReactions-1].biomassCoefficient = 0.0;
+		fbaReader.reactions[fbaReader.noReactions-1].optimisationCoefficient = 0.0;
 	
 		//Minimise everything else
 		for(int k = 0;k < fbaReader.noReactions - 2;k++) {
 			if(answer[k] > 0) {
 				if(fbaReader.reactions[k].upperBound.equals(Double.valueOf(1000))) {
-					fbaReader.reactions[k].biomassCoefficient = -1.0;		
+					fbaReader.reactions[k].optimisationCoefficient = -1.0;		
 					if(fbaReader.reactions[k].lowerBound.doubleValue() < 0) {
 						fbaReader.reactions[k].lowerBound = 0.0;
 					}
 				}	
 			} else {
 				if(fbaReader.reactions[k].lowerBound.equals(Double.valueOf(-1000))) {
-					fbaReader.reactions[k].biomassCoefficient = 1.0;	
+					fbaReader.reactions[k].optimisationCoefficient = 1.0;	
 					if(fbaReader.reactions[k].upperBound.doubleValue() > 0) {
 						fbaReader.reactions[k].upperBound = 0.0;
 					}

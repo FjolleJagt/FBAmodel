@@ -109,7 +109,7 @@ public class FBAreader {
             }
 
 
-            reactions[j].biomassCoefficient = Double.valueOf(reactionSheet.getCell(4,j).getContents());
+            reactions[j].optimisationCoefficient = Double.valueOf(reactionSheet.getCell(4,j).getContents());
 
         }
 
@@ -337,11 +337,11 @@ public class FBAreader {
 
         reactions[noReactions-2].lowerBound = 0.0;
         reactions[noReactions-2].upperBound = null;
-        reactions[noReactions-2].biomassCoefficient = 0.0;
+        reactions[noReactions-2].optimisationCoefficient = 0.0;
 
         reactions[noReactions-1].lowerBound = 0.0;
         reactions[noReactions-1].upperBound = null;
-        reactions[noReactions-1].biomassCoefficient = 1.0;
+        reactions[noReactions-1].optimisationCoefficient = 1.0;
     }
 
     public void writeSmatrix(double [] answer) throws IOException {
@@ -379,7 +379,7 @@ public class FBAreader {
             } else {
             	sheet2.addCell(new jxl.write.Number(3,noReactions-2,999));
             }
-            number = new jxl.write.Number(4,noReactions-2, reactions[noReactions-2].biomassCoefficient);
+            number = new jxl.write.Number(4,noReactions-2, reactions[noReactions-2].optimisationCoefficient);
             sheet2.addCell(number);
             label = new jxl.write.Label(0,noReactions-1, reactions[noReactions-1].name);
             sheet2.addCell(label);
@@ -393,7 +393,7 @@ public class FBAreader {
             	number = new jxl.write.Number(3,noReactions-1, reactions[noReactions-1].upperBound);
             	sheet2.addCell(number);
             }
-            number = new jxl.write.Number(4,noReactions-1, reactions[noReactions-1].biomassCoefficient);
+            number = new jxl.write.Number(4,noReactions-1, reactions[noReactions-1].optimisationCoefficient);
             sheet2.addCell(number);
 
             for(int j = 0;j < noReactions;j++) {

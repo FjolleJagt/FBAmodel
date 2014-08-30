@@ -44,7 +44,7 @@ public class FBA {
     public void loadReactions(Reaction[] reactions) {
     	this.reactions = reactions;
         for(int j = 0;j < noReactants;j++) {
-            if(reactions[j].biomassCoefficient > 0) {
+            if(reactions[j].optimisationCoefficient > 0) {
                 biomassEquationIndex = j;
             }
         }
