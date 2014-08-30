@@ -76,8 +76,6 @@ public class FBAreader {
 
         usedCompounds[noCompounds]=false;
 
-        System.out.println("Compounds in");
-
         for(int j = 0;j < noReactions;j++) {
         	reactions[j] = new Reaction();
             reactions[j].name = reactionList.getCell(0,j).getContents();
@@ -115,22 +113,15 @@ public class FBAreader {
 
         }
 
-        System.out.println("Reactions in");
-
         for(int k = 0;k < noBiomass;k++) {
             biomassNames[k] = biomassList.getCell(0,k).getContents();
-            //System.out.println(biomassNames[k]);
             Cell nc1 = biomassList.getCell(1,k);
-            //System.out.println();
             NumberCell nc = (NumberCell) nc1;
             biomassComp[k] = Double.valueOf(nc.getValue());
-            //System.out.println(biomassComp[k]);
             biomassIn[k] = false;
             if(Double.valueOf(biomassList.getCell(2,k).getContents())>0) {
                 biomassIn[k] = true;
             }
-
-            System.out.println(k + ": " + biomassNames[k] + " " + biomassComp[k]);
         }
 
         biomassNo = new int [noBiomass];
@@ -139,12 +130,9 @@ public class FBAreader {
             for(int k = 0;k < noBiomass;k++) {
                 if(biomassNames[k].equals(compoundNames[i])) {
                     biomassNo[k] = i;
-                    //System.out.println(biomassNames[k] + " is in, its compounts #" + i + " with stoich " + biomassComp[k]);
                 }
             }
         }
-
-        System.out.println("Biomass in");
 
         input.close();
 
@@ -159,23 +147,6 @@ public class FBAreader {
 
 
         for(int j = 0;j < noReactions;j++) {
-	    /*
-	    System.out.print(j + " : " + reactions[j] + " " + a[j] + " " + b[j] + " " + c[j]);
-	    if(lb[j]) {
-		System.out.print(" Lower bound in place ");
-	    }
-	    else {
-		System.out.print(" Lower bound absent ");
-	    }
-	    if(ub[j]) {
-		System.out.print(" Upper bound in place ");
-	    }
-	    else {
-		System.out.print(" Upper bound absent ");
-	    }
-
-	    System.out.print("\n");
-	    */
             //pad to make sure bits splits it
             reactions[j].equation = reactions[j].equation + " ";
 
@@ -201,8 +172,6 @@ public class FBAreader {
 
             //then break up the parts in the neg side
             String [] negParts;
-
-            //System.out.println(bits[0].lastIndexOf("+"));
 
             if(bits[0].lastIndexOf("+") > 0) {
                 negParts = bits[0].split("\\+");
@@ -233,29 +202,20 @@ public class FBAreader {
                     negStoich[k] = 1.0;
                 }
 
-                //System.out.println(negParts[k]);
-
                 boolean nothingFound = true;
 
                 //now find them...
                 for(int i = 0;i < noCompounds;i++) {
-                    //System.out.print(negParts[k] + "," + compoundNames[i] + ":");
                     if(negParts[k].equals(compoundNames[i])) {
                         S[i][j] = -1*negStoich[k];
                         nothingFound = false;
                         usedCompounds[i] = true;
-                        //System.out.print("FOUND " + S[i][j] + " inserted");
                     }
                     else {
-                        //System.out.print("NUFFIN there ");
                         if(negParts[k].equals("")) {
                             nothingFound = false;
                         }
                     }
-                    //System.out.print("\n");
-                }
-                if(nothingFound) {
-                    System.out.println(negParts[k] + " was not found in reaction no " + j + ", " + reactions[j].name);
                 }
             }
 
@@ -289,8 +249,6 @@ public class FBAreader {
                     posStoich[k] = 1.0;
                 }
 
-                //System.out.println(posParts[k]);
-
                 boolean nothingFound = true;
 
                 //now find them...
@@ -301,15 +259,11 @@ public class FBAreader {
                         usedCompounds[i] = true;
                     }
                     else {
-                        //System.out.print("NUFFIN there ");
                         if(posParts[k].equals("")) {
                             nothingFound = false;
                         }
                     }
 
-                }
-                if(nothingFound) {
-                    System.out.println(posParts[k] + " was not found in reaction no " + j + ", " + reactions[j].name);
                 }
             }
 
@@ -363,12 +317,10 @@ public class FBAreader {
                         pos+="+" + String.valueOf(biomassComp[k]) + "*" + compoundNames[biomassNo[k]];
                     }
                 }
-                //System.out.println(neg + "-->" + pos);
             }
             else {
                 S[biomassNo[k]][noReactions-2] = 0.0;
             }
-            //System.out.println(compoundNames[biomassNo[k]] + " is in with value " + biomassComp[k] + " should be the same as " + S[biomassNo[k]][noReactions-2]);
         }
 
         reactions[noReactions-2].equation = neg + "-->" + pos;
@@ -491,28 +443,6 @@ public class FBAreader {
         FBAreader fbaReader = new FBAreader(args[0],args[1]);
 
         fbaReader.createSmatrix();
-        System.out.print("Blank,");
-        for(int i = 0;i < fbaReader.noCompounds;i++) {
-            System.out.print(fbaReader.compoundNames[i] + ",");
-        }
-        System.out.print("\n");
-
-        for(int j = 0;j < fbaReader.noReactions;j++) {
-            System.out.print(fbaReader.reactions[j].name + ",");
-            for(int i = 0;i < fbaReader.noCompounds;i++) {
-                System.out.print(fbaReader.S[i][j] + ",");
-            }
-            System.out.print("\n");
-        }
-	/*
-	try {
-	    R.writeSmatrix();
-	}
-	catch (IOException e) {
-	    e.printStackTrace();
-	}
-	*/
-
         FBA fba = new FBA(fbaReader.noReactions,fbaReader.noCompounds);
 
         fba.loadS(fbaReader.S);
