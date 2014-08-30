@@ -11,7 +11,6 @@ public class FBAreader {
 
     Workbook input;
 
-    Sheet reactionSheet;
     Sheet compoundSheet;
     Sheet biomassSheet;
 
@@ -47,23 +46,20 @@ public class FBAreader {
     public void read() throws IOException {
         try {
             input = Workbook.getWorkbook(new File(inputFileName));
-
         }
         catch (jxl.read.biff.BiffException m) {
             m.printStackTrace();
         }
 
         compoundSheet = input.getSheet(0);
-        reactionSheet = input.getSheet(1);
         biomassSheet = input.getSheet(2);
 
         noCompounds = compoundSheet.getRows();
-        noReactions = reactionSheet.getRows();
         noBiomass = biomassSheet.getRows();
 
         compoundNames = new String [noCompounds+1];
         usedCompounds = new boolean [noCompounds+1];
-        reactions = new Reaction[noReactions+2];
+        
 
         biomassNames = new String [noBiomass];
         biomassComp = new double [noBiomass];
@@ -76,42 +72,7 @@ public class FBAreader {
 
         usedCompounds[noCompounds]=false;
 
-        for(int j = 0;j < noReactions;j++) {
-        	reactions[j] = new Reaction();
-            reactions[j].name = reactionSheet.getCell(0,j).getContents();
-            reactions[j].equation = reactionSheet.getCell(1,j).getContents();
-
-            Cell lq = reactionSheet.getCell(2,j);
-
-            if(lq.getType() == CellType.LABEL) {
-                String lc = lq.getContents();
-                if(lc.compareTo("-infty") == 0) {
-                    reactions[j].lowerBound = null;
-                }
-            }
-            else {
-                NumberCell nc = (NumberCell) lq;
-                reactions[j].lowerBound = nc.getValue();
-            }
-
-
-            Cell uq = reactionSheet.getCell(3,j);
-
-            if(uq.getType() == CellType.LABEL) {
-                String uc = uq.getContents();
-                if(uc.compareTo("infty") == 0) {
-                    reactions[j].upperBound = null;
-                }
-            }
-            else {
-                NumberCell nc = (NumberCell) uq;
-                reactions[j].upperBound = nc.getValue();
-            }
-
-
-            reactions[j].optimisationCoefficient = Double.valueOf(reactionSheet.getCell(4,j).getContents());
-
-        }
+        loadReactions();
 
         for(int k = 0;k < noBiomass;k++) {
             biomassNames[k] = biomassSheet.getCell(0,k).getContents();
@@ -138,6 +99,36 @@ public class FBAreader {
         System.out.println(noCompounds +" compounds, " + noReactions + " reactions loaded");
 
     }
+
+	private void loadReactions() {
+		Sheet reactionSheet = input.getSheet(1);
+		
+		noReactions = reactionSheet.getRows();
+		reactions = new Reaction[noReactions+2];
+		
+		for(int j = 0;j < noReactions;j++) {
+        	reactions[j] = new Reaction();
+            reactions[j].name = reactionSheet.getCell(0,j).getContents();
+            reactions[j].equation = reactionSheet.getCell(1,j).getContents();
+            reactions[j].lowerBound = getDoubleFromCell(reactionSheet.getCell(2,j));
+            reactions[j].upperBound = getDoubleFromCell(reactionSheet.getCell(3,j));
+            reactions[j].optimisationCoefficient = getDoubleFromCell(reactionSheet.getCell(4,j));
+        }
+	}
+
+	private Double getDoubleFromCell(Cell cell) {
+		if(cell.getType() == CellType.LABEL) {
+		    String contents = cell.getContents();
+		    if(contents.compareTo("infty") == 0 || contents.compareTo("-infty") == 0){
+		        return null;
+		    } else {
+		    	throw new RuntimeException("Couldn't parse cell value as double: " + contents);
+		    }
+		} else {
+		    NumberCell nc = (NumberCell) cell;
+		    return new Double(nc.getValue());
+		}
+	}
 
 
     public void createSmatrix() {

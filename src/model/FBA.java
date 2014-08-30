@@ -5,9 +5,9 @@ import org.gnu.glpk.GLPKConstants;
 import org.gnu.glpk.GlpkException;
 import org.gnu.glpk.SWIGTYPE_p_double;
 import org.gnu.glpk.SWIGTYPE_p_int;
+import org.gnu.glpk.glp_iocp;
 import org.gnu.glpk.glp_prob;
 import org.gnu.glpk.glp_smcp;
-import org.gnu.glpk.glp_iocp;
 
 public class FBA {
 
@@ -150,9 +150,14 @@ public class FBA {
         simplexParameters.setMeth(GLPKConstants.GLP_DUALP);
         simplexParameters.setMsg_lev(GLPKConstants.GLP_MSG_OFF);
 
-        int returnCode = GLPK.glp_simplex(problem, simplexParameters);      
-        if(returnCode != 0){
-        	throw new GlpkException("Unable to solve the problem - look up error code and put an explanatory message for this code here.");
+        int returnCode = GLPK.glp_simplex(problem, simplexParameters);
+        
+        if(returnCode == GLPK.GLP_ENODFS){
+    		throw new GlpkException("Unable to start the search, because LP relaxation of the MIP problem instance has no dual feasible solution");
+        } else if(returnCode == GLPK.GLP_ENOPFS){
+        	throw new GlpkException("Unable to start the search, because LP relaxation of the MIP problem instance has no primal feasible solution");
+        } else if(returnCode != 0){
+			throw new GlpkException("Unable to solve the problem - look up error code and put an explanatory message for this code here.");
         }
 	}
 
