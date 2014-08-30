@@ -7,7 +7,7 @@ public class TestRig {
 	private FBAreader fbaReader;
 	
 	public void test(){
-		fbaReader = new FBAreader("resources/in.xls","resources/out.xls");
+		fbaReader = new FBAreader("resources/in.xls","resources/out.csv");
 	
 		fbaReader.createSmatrix();
 		boolean [] inBiomass = new boolean[fbaReader.noBiomass];

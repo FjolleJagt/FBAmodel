@@ -345,6 +345,7 @@ public class FBAreader {
     }
 
     public void writeSmatrix(double [] answer) throws IOException {
+    	/*
         try {
             input = Workbook.getWorkbook(new File(inputFileName));
 
@@ -429,7 +430,20 @@ public class FBAreader {
         }
         catch (jxl.write.WriteException m) {
             m.printStackTrace();
-        }
+        }*/
+    	
+    	Writer writer = null;
+
+    	try {
+		    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName), "utf-8"));
+		    for(int j=0; j<noReactions; j++){
+		    	writer.write(reactions[j].name + ": " + answer[j] + "\n"); 
+		    }
+    	} catch (IOException ex) {
+    		ex.printStackTrace();
+    	} finally {
+    		writer.close();	
+    	}
 
     }
 

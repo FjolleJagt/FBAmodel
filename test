@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-mv resources/out.xls resources/old_out.xls
+outputFile='out.csv'
+
+mv resources/$outputFile resources/old_$outputFile
 
 /usr/lib/jvm/java-7-openjdk/bin/java -Djava.library.path=/usr/local/lib/jni -Dfile.encoding=UTF-8 -classpath /home/joshua/scripts/java/mas/Model/bin:/home/joshua/scripts/java/mas/Model/lib/glpk-java.jar:/home/joshua/scripts/java/mas/Model/lib/jxl.jar model.mas
 
-diff resources/{out,ref}.xls
+diff -u resources/$outputFile resources/$(echo $outputFile | sed 's/out/ref/')
 
 if [ $? == 0 ]; then
 	echo -e "\nPass!"
