@@ -11,9 +11,9 @@ public class FBAreader {
 
     Workbook input;
 
-    Sheet reactionList;
-    Sheet compoundList;
-    Sheet biomassList;
+    Sheet reactionSheet;
+    Sheet compoundSheet;
+    Sheet biomassSheet;
 
     int noReactions;
     int noCompounds;
@@ -53,13 +53,13 @@ public class FBAreader {
             m.printStackTrace();
         }
 
-        compoundList = input.getSheet(0);
-        reactionList = input.getSheet(1);
-        biomassList = input.getSheet(2);
+        compoundSheet = input.getSheet(0);
+        reactionSheet = input.getSheet(1);
+        biomassSheet = input.getSheet(2);
 
-        noCompounds = compoundList.getRows();
-        noReactions = reactionList.getRows();
-        noBiomass = biomassList.getRows();
+        noCompounds = compoundSheet.getRows();
+        noReactions = reactionSheet.getRows();
+        noBiomass = biomassSheet.getRows();
 
         compoundNames = new String [noCompounds+1];
         usedCompounds = new boolean [noCompounds+1];
@@ -71,17 +71,17 @@ public class FBAreader {
 
         for(int i = 0;i < noCompounds;i++) {
             usedCompounds[i] = false;
-            compoundNames[i] = compoundList.getCell(0,i).getContents();
+            compoundNames[i] = compoundSheet.getCell(0,i).getContents();
         }
 
         usedCompounds[noCompounds]=false;
 
         for(int j = 0;j < noReactions;j++) {
         	reactions[j] = new Reaction();
-            reactions[j].name = reactionList.getCell(0,j).getContents();
-            reactions[j].equation = reactionList.getCell(1,j).getContents();
+            reactions[j].name = reactionSheet.getCell(0,j).getContents();
+            reactions[j].equation = reactionSheet.getCell(1,j).getContents();
 
-            Cell lq = reactionList.getCell(2,j);
+            Cell lq = reactionSheet.getCell(2,j);
 
             if(lq.getType() == CellType.LABEL) {
                 String lc = lq.getContents();
@@ -95,7 +95,7 @@ public class FBAreader {
             }
 
 
-            Cell uq = reactionList.getCell(3,j);
+            Cell uq = reactionSheet.getCell(3,j);
 
             if(uq.getType() == CellType.LABEL) {
                 String uc = uq.getContents();
@@ -109,17 +109,17 @@ public class FBAreader {
             }
 
 
-            reactions[j].biomassCoefficient = Double.valueOf(reactionList.getCell(4,j).getContents());
+            reactions[j].biomassCoefficient = Double.valueOf(reactionSheet.getCell(4,j).getContents());
 
         }
 
         for(int k = 0;k < noBiomass;k++) {
-            biomassNames[k] = biomassList.getCell(0,k).getContents();
-            Cell nc1 = biomassList.getCell(1,k);
+            biomassNames[k] = biomassSheet.getCell(0,k).getContents();
+            Cell nc1 = biomassSheet.getCell(1,k);
             NumberCell nc = (NumberCell) nc1;
             biomassComp[k] = Double.valueOf(nc.getValue());
             biomassIn[k] = false;
-            if(Double.valueOf(biomassList.getCell(2,k).getContents())>0) {
+            if(Double.valueOf(biomassSheet.getCell(2,k).getContents())>0) {
                 biomassIn[k] = true;
             }
         }
@@ -341,12 +341,6 @@ public class FBAreader {
         reactions[noReactions-1].lowerBound = 0.0;
         reactions[noReactions-1].upperBound = null;
         reactions[noReactions-1].biomassCoefficient = 1.0;
-
-
-        //Create new line in S matrix
-
-
-
     }
 
     public void writeSmatrix(double [] answer) throws IOException {
