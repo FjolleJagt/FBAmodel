@@ -1,13 +1,26 @@
-package model;
+package test;
 
+import static org.junit.Assert.*;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class TestRig {
+import jxl.NumberCell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.read.biff.BiffException;
+import model.FBA;
+import model.FBAreader;
+
+import org.junit.Test;
+
+public class endToEndTest {
 	private FBAreader fbaReader;
 	
-	public void test(){
-		fbaReader = new FBAreader("resources/in.xls","resources/out.csv");
+	@Test
+	public void runModel_getsSameResultsAsOriginalCode(){
+		fbaReader = new FBAreader("resources/in/original.xls","resources/out.csv");
 	
 		fbaReader.createSmatrix();
 		boolean [] inBiomass = new boolean[fbaReader.noBiomass];
@@ -67,36 +80,36 @@ public class TestRig {
 	
 		answer = F2.optimise();
 	
-		//To here
-	
 		System.out.println("Growth is " + answer[fbaReader.noReactions-1]);
 	
 		for(int k = 0;k < inBiomass.length;k++) {
 			fbaReader.biomassIn[k] = inBiomass[k];		   
 		}
 	
-		try {		    
-			fbaReader.writeSmatrix(answer);
+		double[] actualFluxes = getCalculatedFluxes("resources/ref/original.xls");
+		System.out.println(actualFluxes.length + "," + answer.length);
+		for(int i=0;i<actualFluxes.length; i++){
+			assertTrue("Flux for " + fbaReader.reactions[i].name + " doesn't match: Expected <"
+					+ actualFluxes[i] + ">, Actual <" + answer[i] + ">",actualFluxes[i] == answer[i]);
 		}
-		catch (IOException e) {
+	}
+
+	private double[] getCalculatedFluxes(String filename) {
+		Workbook input;
+		try {
+			input = Workbook.getWorkbook(new File(filename));
+			Sheet reactionSheet = input.getSheet(1);
+			int noReactions = reactionSheet.getRows();
+			double[] fluxes = new double[noReactions];
+			
+			for(int j = 0;j < noReactions;j++) {
+				NumberCell cell = (NumberCell) reactionSheet.getCell(5,j);				
+	        	fluxes[j] = Double.valueOf(cell.getValue());
+	        }
+			return fluxes;
+		} catch (BiffException | IOException e) {
 			e.printStackTrace();
+			return null;
 		}
-	
-		/*int z = ((Number) lookSpin.getValue()).intValue() - 1;
-	
-	
-		System.out.println("Examining reactant no " + z + " which is " + R.compoundNames[z]);
-		for(int k = 0;k < answer.length;k++) {
-			if(R.S[z][k] != 0) {
-				if(Math.abs(answer[k]) > 0.01) {
-					System.out.println("ACTIVE: " + R.reactionNames[k] + "," + R.reactions[k]+ "," + answer[k]);
-				}
-				else {
-					System.out.println("INACTIVE: " + R.reactionNames[k] + "," + R.reactions[k]+ "," + answer[k]);
-				}
-			}	 
-		} 
-	
-		System.out.println("And done");*/
 	}
 }

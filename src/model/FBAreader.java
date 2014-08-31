@@ -3,6 +3,7 @@ package model;
 import java.io.*;
 
 import jxl.*;
+import jxl.read.biff.BiffException;
 import jxl.write.*;
 
 public class FBAreader {
@@ -14,21 +15,21 @@ public class FBAreader {
     Sheet compoundSheet;
     Sheet biomassSheet;
 
-    int noReactions;
-    int noCompounds;
-    int noBiomass;
+    public int noReactions;
+    public int noCompounds;
+    public int noBiomass;
 
-    Compound [] compounds;
+    public Compound [] compounds;
 
-    Reaction [] reactions;
-    Compound [] biomassNames;
+    public Reaction [] reactions;
+    public Compound [] biomassNames;
     double [] biomassComp;
-    boolean [] biomassIn;
+    public boolean [] biomassIn;
     int [] biomassNo;
 
     boolean [] usedCompounds;
 
-    double [][] S;
+    public double [][] S;
 
     public FBAreader(String in, String out) {
         inputFileName = in;
@@ -47,7 +48,7 @@ public class FBAreader {
         try {
             input = Workbook.getWorkbook(new File(inputFileName));
         }
-        catch (jxl.read.biff.BiffException m) {
+        catch (IOException | BiffException m) {
             m.printStackTrace();
         }
 
