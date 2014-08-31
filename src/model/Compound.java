@@ -1,7 +1,7 @@
 package model;
 
 public class Compound {
-	String name;
+	public String name;
 	
 	public Compound(String name){
 		this.name = name;

@@ -136,141 +136,87 @@ public class FBAreader {
         S = new double [noCompounds+1][noReactions+2];
         //+2, +1 for the biomass reaction, growth and biomass to be included later.
 
-        //this should work, but no error checking, woe betide!!!
-
-
         for(int j = 0;j < noReactions;j++) {
-            //pad to make sure bits splits it
-            reactions[j].equation = reactions[j].equation + " ";
-
-            //split the reactions in the two bits either side of the operator
-            //note reversibility as we go
-            String [] bits = new String [2];
-
-
-            if(reactions[j].equation.lastIndexOf("<==>") < 0) {
-                bits = reactions[j].equation.split("-->");
+            double[] stoichiometry = getStoichiometryFromEquation(reactions[j].equation);
+            for(int i = 0; i < noCompounds; i++){
+            	S[i][j] += stoichiometry[i];
             }
-            else {
-                bits = reactions[j].equation.split("<==>");
-
-                //This is causing the problem, its overwriting what we need...
-		/*
-		if(a[j] == 0) {		    
-		    lb[j] = false;
-		}
-		*/
-            }
-
-
-            //then break up the parts in the neg side
-            String [] negParts;
-
-            if(bits[0].lastIndexOf("+") > 0) {
-                negParts = bits[0].split("\\+");
-            }
-            else {
-                negParts = new String [1];
-                negParts[0] = bits[0];
-            }
-            double [] negStoich = new double [negParts.length];
-
-            //check for stoichiometry different from 1
-            for(int k = 0;k < negParts.length;k++) {
-
-                String [] chop;
-                if(bits[0].lastIndexOf("*") > 0) {
-                    chop = negParts[k].split("\\*");
-                }
-                else {
-                    chop = new String [1];
-                    chop[0] = negParts[k];
-                }
-                if(chop.length > 1) {
-                    negParts[k] = chop[1].trim();
-                    negStoich[k] = Double.valueOf(chop[0].trim());
-                }
-                else {
-                    negParts[k] = chop[0].trim();
-                    negStoich[k] = 1.0;
-                }
-
-                boolean nothingFound = true;
-
-                //now find them...
-                for(int i = 0;i < noCompounds;i++) {
-                    if(negParts[k].equals(compounds[i].name)) {
-                        S[i][j] = -1*negStoich[k];
-                        nothingFound = false;
-                        usedCompounds[i] = true;
-                    }
-                    else {
-                        if(negParts[k].equals("")) {
-                            nothingFound = false;
-                        }
-                    }
-                }
-            }
-
-            //then do the whole thing again for the positive side
-            String [] posParts;
-            if(bits[1].lastIndexOf("+") > 0) {
-                posParts = bits[1].split("\\+");
-            }
-            else {
-                posParts = new String [1];
-                posParts[0] = bits[1];
-            }
-            double [] posStoich = new double [posParts.length];
-
-            //check for stoichiometry different from 1
-            for(int k = 0;k < posParts.length;k++) {
-                String [] chop;
-                if(bits[1].lastIndexOf("*") > 0) {
-                    chop = posParts[k].split("\\*");
-                }
-                else {
-                    chop = new String [1];
-                    chop[0] = posParts[k];
-                }
-                if(chop.length > 1) {
-                    posParts[k] = chop[1].trim();
-                    posStoich[k] = Double.valueOf(chop[0].trim());
-                }
-                else {
-                    posParts[k] = chop[0].trim();
-                    posStoich[k] = 1.0;
-                }
-
-                boolean nothingFound = true;
-
-                //now find them...
-                for(int i = 0;i < noCompounds;i++) {
-                    if(posParts[k].equals(compounds[i].name)) {
-                        S[i][j] = posStoich[k];
-                        nothingFound = false;
-                        usedCompounds[i] = true;
-                    }
-                    else {
-                        if(posParts[k].equals("")) {
-                            nothingFound = false;
-                        }
-                    }
-
-                }
-            }
-
         }
         for(int i = 0;i < noCompounds;i++) {
             if(!usedCompounds[i]) {
                 System.out.println("Compound no " + i + ", which is " + compounds[i].name + " has not been used");
             }
         }
-
-
-
-
     }
+
+	public double[] getStoichiometryFromEquation(String equation) {
+		String [] parts;
+
+		//pad equation, else split("foo<==>") will return ["foo"] not ["foo",""]
+		equation = equation + " ";
+		
+		if(equation.contains("-->")) {
+		    parts = equation.split("-->");
+		} else if(equation.contains("<==>")) {
+		    parts = equation.split("<==>");
+		} else {
+			throw new RuntimeException("No arrow or unknown arrow type in equation: " + equation);
+		}
+		double[] leftStoichiometry = getStoichiometryFromSideOfEquation(parts[0]);
+		double[] rightStoichiometry = getStoichiometryFromSideOfEquation(parts[1]);
+		double[] stoichiometry = new double[noReactions];
+		for(int i=0;i<noReactions;i++){
+			stoichiometry[i] = rightStoichiometry[i] - leftStoichiometry[i];
+		}
+		return stoichiometry;
+	}
+
+	public double[] getStoichiometryFromSideOfEquation(String equationSide) {
+		double[] stoichiometry = new double[noReactions];
+		String [] compoundNames = splitIntoCompounds(equationSide);
+		double [] compoundStoichiometry = new double [compoundNames.length];
+
+		//check for stoichiometry different from 1
+		for(int k = 0; k < compoundNames.length;k++) {
+		    if(compoundNames[k].contains("*")) {
+		    	String [] chop = compoundNames[k].split("\\*");
+		        compoundNames[k] = chop[1].trim();
+		        compoundStoichiometry[k] = Double.valueOf(chop[0].trim());
+		    } else {
+		        compoundStoichiometry[k] = 1.0;
+		        compoundNames[k] = compoundNames[k].trim();
+		    }
+
+		    boolean nothingFound = true;
+
+		    //now find them...
+		    for(int i = 0;i < noCompounds;i++) {
+		        if(compoundNames[k].equals(compounds[i].name)) {
+		            stoichiometry[i] = compoundStoichiometry[k];
+		            nothingFound = false;
+		            usedCompounds[i] = true;
+		        } else if(compoundNames[k].equals("")) {
+	                nothingFound = false;
+		        }
+		    }
+		    
+		    if(nothingFound){
+		    	throw new RuntimeException("Couldn't find compound '" + compoundNames[k] + "' in list of compound names");
+		    }
+		}
+		return stoichiometry;
+	}
+
+	private String[] splitIntoCompounds(String equationSide) {
+		String[] parts;
+		if(equationSide.contains("+")) {
+		    parts = equationSide.split("\\+");
+		} else {
+		    parts = new String [1];
+		    parts[0] = equationSide;
+		}
+		return parts;
+	}
     public void createBiomassReaction(boolean [] in) {
 
         noReactions++; //one for the biomass reaction
@@ -337,7 +283,6 @@ public class FBAreader {
     }
 
     public void writeSmatrix(double [] answer) throws IOException {
-    	/*
         try {
             input = Workbook.getWorkbook(new File(inputFileName));
 
@@ -422,21 +367,7 @@ public class FBAreader {
         }
         catch (jxl.write.WriteException m) {
             m.printStackTrace();
-        }*/
-    	
-    	Writer writer = null;
-
-    	try {
-		    writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName), "utf-8"));
-		    for(int j=0; j<noReactions; j++){
-		    	writer.write(reactions[j].name + ": " + answer[j] + "\n"); 
-		    }
-    	} catch (IOException ex) {
-    		ex.printStackTrace();
-    	} finally {
-    		writer.close();	
-    	}
-
+        }
     }
 
     public static void main(String[] args) {
