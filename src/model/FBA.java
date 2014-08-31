@@ -156,9 +156,9 @@ public class FBA {
         int returnCode = GLPK.glp_simplex(problem, simplexParameters);
         
         if(returnCode == GLPK.GLP_ENODFS){
-    		throw new GlpkException("Unable to start the search, because LP relaxation of the MIP problem instance has no dual feasible solution");
+    		throw new GlpkException("Unable to start the search, because the bounds are relaxed enough to allow unlimited growth");
         } else if(returnCode == GLPK.GLP_ENOPFS){
-        	throw new GlpkException("Unable to start the search, because LP relaxation of the MIP problem instance has no primal feasible solution");
+        	throw new GlpkException("Unable to start the search, because the bounds are too restrictive");
         } else if(returnCode != 0){
 			throw new GlpkException("Unable to solve the problem - look up error code and put an explanatory message for this code here.");
         }
