@@ -1,0 +1,7 @@
+ * Running *
+
+ You can either copy the files in src/model in the place of the ones you already have, and run it normally, or run it with a command like the following:
+
+ [mess500:~/mas/Model]$ /usr/lib/jvm/java-7-openjdk/bin/java -Djava.library.path=/usr/local/lib/jni -Dfile.encoding=UTF-8 -classpath ~/mas/Model/bin:~/mas/Model/lib/glpk-java.jar:~/mas/Model/lib/jxl.jar model.mas
+
+ Note that the latest input file is "resources/in/divergence2.xls" (every time I made a change that changed the output of the model, I named that a new divergence - so divergence 1 was correcting the stochiometry, and divergence 2 was omitting some metabolites from the mass balance calculations)
