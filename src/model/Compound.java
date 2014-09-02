@@ -2,10 +2,7 @@ package model;
 
 public class Compound {
 	public String name;
-	
-	public Compound(String name){
-		this.name = name;
-	}
+	public boolean isInMassBalance;
 
 	@Override
 	public boolean equals(Object obj) {

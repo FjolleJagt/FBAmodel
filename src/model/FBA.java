@@ -203,7 +203,12 @@ public class FBA {
 		GLPK.glp_add_rows(lp, noCompounds);
 		for(int i = 0;i < noCompounds;i++) {
 		    GLPK.glp_set_row_name(lp, i+1, compounds[i].name);
-		    GLPK.glp_set_row_bnds(lp, i+1, GLPKConstants.GLP_FX, 0.0, 0.0);
+		    if(compounds[i].isInMassBalance){
+		    	GLPK.glp_set_row_bnds(lp, i+1, GLPKConstants.GLP_FX, 0.0, 0.0);
+		    } else {
+		    	System.out.println("Omitting " + compounds[i].name + " from mass balance");
+		    	GLPK.glp_set_row_bnds(lp, i+1, GLPKConstants.GLP_DB, -1000.0, 1000.0);
+		    }
 		}
 	}
 

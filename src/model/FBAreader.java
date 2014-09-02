@@ -68,7 +68,9 @@ public class FBAreader {
 
         for(int i = 0;i < noCompounds;i++) {
             usedCompounds[i] = false;
-            compounds[i] = new Compound(compoundSheet.getCell(0,i).getContents());
+            compounds[i] = new Compound();
+            compounds[i].name = compoundSheet.getCell(0,i).getContents();
+            compounds[i].isInMassBalance = compoundSheet.getCell(2,i).getContents().equals("N");
         }
 
         usedCompounds[noCompounds]=false;
@@ -76,7 +78,9 @@ public class FBAreader {
         loadReactions();
 
         for(int k = 0;k < noBiomass;k++) {
-            biomassNames[k] = new Compound(biomassSheet.getCell(0,k).getContents());
+            biomassNames[k] = new Compound();
+            biomassNames[k].name = biomassSheet.getCell(0,k).getContents();
+            biomassNames[k].isInMassBalance = false;
             Cell nc1 = biomassSheet.getCell(1,k);
             NumberCell nc = (NumberCell) nc1;
             biomassComp[k] = Double.valueOf(nc.getValue());
@@ -268,7 +272,9 @@ public class FBAreader {
 
         noCompounds++; //one for the biomass
 
-        compounds[noCompounds-1] = new Compound("Biomass");
+        compounds[noCompounds-1] = new Compound();
+        compounds[noCompounds-1].name = "Biomass";
+        compounds[noCompounds-1].isInMassBalance = false;
 
         S[noCompounds-1][noReactions-2] = 1;
         S[noCompounds-1][noReactions-1] = -1;
